@@ -1,7 +1,7 @@
 services:
   main:
     build: .
-    container_name: your_bot
+    container_name: diary
     network_mode: host
     restart: always
     volumes:
