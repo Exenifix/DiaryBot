@@ -52,19 +52,16 @@ class Bot(commands.InteractionBot):
         tb = traceback.format_exc()
         if len(tb) > 1024:
             tb = tb[-1024:]
-        channel = self.get_channel(LOG_CHANNEL_ID)
+        channel = self.get_partial_messageable(LOG_CHANNEL_ID, type=disnake.ChannelType.text)
         try:
-            assert channel is not None
             await channel.send(
                 "Unknown exception occurred",
                 embed=disnake.Embed(color=0xFF0000, description=tb),
                 allowed_mentions=disnake.AllowedMentions.all(),
             )
             self.log.ok("Sent notification about this error")
-        except AssertionError:
-            self.log.error("Failed to get log channel")
         except disnake.HTTPException:
-            self.log.error("Was unable to send message to that channel")
+            self.log.error("Was unable to send message to the specified log channel")
 
     async def close(self) -> None:
         self.log.info("Shutting down...")

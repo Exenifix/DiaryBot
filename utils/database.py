@@ -5,7 +5,9 @@ from pathlib import Path
 from typing import Any
 
 import asyncpg
+import numpy as np
 from exencolorlogs import FileLogger
+from numpy import ndarray
 from pendulum import Date, Period
 
 from utils import env, paths
@@ -150,6 +152,26 @@ class Database:
             period.end,
         )
         return {r["created_at"].strftime(r"%A %B %w %Y"): r["content"] for r in data}
+
+    async def get_moods(self, user_id: int, period: Period) -> tuple[ndarray[datetime], ndarray[int]]:
+        data = await self.fetchall(
+            """
+            SELECT
+                mood,
+                day
+            FROM
+                moods
+            WHERE
+                user_id = $1
+                AND day BETWEEN $2 AND $3
+            ORDER BY day
+            """,
+            user_id,
+            period.start,
+            period.end,
+        )
+        raw = np.array([[r["day"], r["mood"]] for r in data])
+        return raw[:, 0], raw[:, 1]
 
 
 class ExistenceEnsurer:

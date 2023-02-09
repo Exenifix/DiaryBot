@@ -5,15 +5,20 @@ from disnake.ext import commands
 
 from utils.bot import Cog
 from utils.converters import DateConverter
+from utils.plots import draw_moods_plot
 from utils.utils import generate_diary
 from utils.views import Modal
 
 
 class DiaryCommands(Cog):
     @commands.slash_command(name="new_entry")
-    async def new_entry(self, inter: disnake.ApplicationCommandInteraction):
+    async def new_entry(self, inter: disnake.ApplicationCommandInteraction, mood: commands.Range[1, 10]):
         """
         Add a new entry into your diary.
+
+        Parameters
+        ----------
+        mood: How good was your day from 1 (bad) to 10 (good)
         """
         date = datetime.now().date()
         if await self.bot.db.fetchval(
@@ -37,6 +42,12 @@ class DiaryCommands(Cog):
         await inter.response.send_modal(modal)
         m_inter = await modal.wait()
         await self.bot.db.new_entry(inter.user.id, date, m_inter.text_values["content"])
+        await self.bot.db.execute(
+            "INSERT INTO moods (user_id, mood, day) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+            inter.user.id,
+            mood,
+            date,
+        )
         await m_inter.send("Successfully added new diary entry!")
 
     @commands.slash_command(name="diary")
@@ -106,3 +117,22 @@ class DiaryCommands(Cog):
         m_inter = await modal.wait()
         await self.bot.db.edit_entry(inter.author.id, date, m_inter.text_values["content"])
         await m_inter.send("Successfully edited diary entry!")
+
+    @commands.slash_command(name="moods")
+    async def moods(
+        self, inter: disnake.ApplicationCommandInteraction, period_start: DateConverter, period_end: DateConverter
+    ):
+        """
+        Draw a graph of your moods throughout the period
+
+        Parameters
+        ----------
+        period_start: Start of period, e.g. Jan 10, March 20th 2023
+        period_end: End of period
+        """
+        data = await self.bot.db.get_moods(inter.user.id, period_end - period_start)
+        if len(data[0]) == 0:
+            await inter.send("There are no mood records for that period!", ephemeral=True)
+            return
+        await inter.response.defer()
+        await inter.send(file=disnake.File(await draw_moods_plot(data), filename="moods.png"))
