@@ -13,11 +13,10 @@ jobs:
         run: docker compose up -d --build
         env:
           TOKEN: ${{ secrets.TOKEN }}
-          USER: ${{ secrets.USER }}
           PASSWORD: ${{ secrets.PASSWORD }}
 
       - name: Display Logs
-        run: python3 -m exendlr bobux-prod "bot is ready"
+        run: python3 -m exendlr diary "bot is ready"
 
       - name: Remove Unused Containers
         run: docker image prune -f

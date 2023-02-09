@@ -1,12 +1,30 @@
 import os
 import uuid
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
 import asyncpg
 from exencolorlogs import FileLogger
+from pendulum import Date, Period
 
 from utils import env, paths
+from utils.errors import EntryAlreadyExists
+
+
+class Data:
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | asyncpg.Record):
+        obj = cls.__new__(cls)
+        for k, v in data.items():
+            setattr(obj, k, v)
+        return obj
+
+
+class EntryData(Data):
+    user_id: int
+    created_at: datetime
+    content: str
 
 
 class Database:
@@ -95,6 +113,43 @@ class Database:
 
     async def fetchval(self, sql: str, *args: Any) -> Any:
         return await self._pool.fetchval(sql, *args)
+
+    async def get_entry(self, user_id: int, _date: Date) -> EntryData | None:
+        data = await self.fetchrow("SELECT * FROM entries WHERE user_id = $1 AND created_at = $2", user_id, _date)
+        if data is None:
+            return None
+        return EntryData.from_dict(data)
+
+    async def new_entry(self, user_id: int, _date: date, content: str) -> None:
+        try:
+            await self.execute(
+                "INSERT INTO entries (user_id, created_at, content) VALUES ($1, $2, $3)", user_id, _date, content
+            )
+        except asyncpg.UniqueViolationError:
+            raise EntryAlreadyExists() from None
+
+    async def edit_entry(self, user_id: int, _date: date, content: str) -> None:
+        await self.execute(
+            "UPDATE entries SET content = $1 WHERE user_id = $2 AND created_at BETWEEN $3 AND $3",
+            content,
+            user_id,
+            _date,
+        )
+
+    async def get_entries(self, user_id: int, period: Period) -> dict[str, str]:
+        data = await self.fetchall(
+            """
+        SELECT
+            created_at, content
+        FROM entries
+        WHERE user_id = $1 AND created_at BETWEEN $2 AND $3
+        ORDER BY created_at
+        """,
+            user_id,
+            period.start,
+            period.end,
+        )
+        return {r["created_at"].strftime(r"%A %B %w %Y"): r["content"] for r in data}
 
 
 class ExistenceEnsurer:

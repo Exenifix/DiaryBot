@@ -22,12 +22,12 @@ for d in REQUIRED_DIRS:
 
 class Bot(commands.InteractionBot):
     def __init__(self) -> None:
-        intents = disnake.Intents(...)
+        intents = disnake.Intents.none()
         self.db = Database()
         self.log = FileLogger("BOT", folder=paths.LOGS)
 
         super().__init__(
-            intents=intents, activity=disnake.Activity(name="something", type=disnake.ActivityType.watching)
+            intents=intents, activity=disnake.Activity(name="activating...", type=disnake.ActivityType.watching)
         )
 
     async def start(self, *args: Any, **kwargs: Any) -> None:
@@ -39,7 +39,6 @@ class Bot(commands.InteractionBot):
     def run(self) -> None:
         self.log.info("Loading extensions...")
         self.load_all_extensions("ext")
-        self.disable_dm_commands()
         super().run(env.main.TOKEN)
 
     async def on_ready(self) -> None:
@@ -92,10 +91,6 @@ class Bot(commands.InteractionBot):
 
             elif full_path.endswith(".py"):
                 self.auto_setup(full_path[:-3].replace("/", "."))
-
-    def disable_dm_commands(self) -> None:
-        for command in self.slash_commands:
-            command.body.dm_permission = False
 
 
 class Cog(commands.Cog):

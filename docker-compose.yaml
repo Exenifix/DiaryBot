@@ -5,9 +5,9 @@ services:
     network_mode: host
     restart: always
     volumes:
-      - /your/data/dir:/app/data
+      - /home/exenifix/diary-data:/app/data
     environment:
-      - DATABASE=db-name
-      - USER
+      - DATABASE=diary
+      - USER=diary
       - PASSWORD
       - TOKEN

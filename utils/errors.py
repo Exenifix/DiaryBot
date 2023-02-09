@@ -12,8 +12,18 @@ class _Unknown:
 UNKNOWN = _Unknown()
 
 
-class CustomException:
+class CustomException(commands.CommandError):
     pass
+
+
+class EntryAlreadyExists(CustomException):
+    def __init__(self):
+        super().__init__("Entry on this day already exists. Use `/edit_entry` to edit it.")
+
+
+class DateConversionFailure(CustomException):
+    def __init__(self):
+        super().__init__("Invalid date format. Correct ones are: `Jan 11`, `March 20 2023`")
 
 
 known_exceptions = [

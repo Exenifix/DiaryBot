@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "disnake-bot-template-postgres"
+name = "DiaryBot"
 version = "0.1"
-description = "A template for speeding up development of discord bots using disnake and postgresql."
+description = "Bot for writing notes about life with reminders!"
 authors = ["Exenifix"]
 readme = "README.md"
 
@@ -9,8 +9,9 @@ readme = "README.md"
 python = "^3.11"
 asyncpg = "^0.27.0"
 exencolorlogs = "^1.1.1"
-disnake = "^2.7.0"
-exenenv = "^1.1"
+disnake = "^2.8.0"
+exenenv = "^1.2"
+pendulum = "^2.1.2"
 
 
 [tool.poetry.group.dev.dependencies]

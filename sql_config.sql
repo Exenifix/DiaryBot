@@ -1,3 +1,18 @@
+CREATE TABLE IF NOT EXISTS entries
+(
+    user_id BIGINT NOT NULL,
+    created_at DATE NOT NULL DEFAULT CURRENT_DATE,
+    content VARCHAR(1024) NOT NULL,
+    UNIQUE (user_id, created_at)
+);
+
+CREATE TABLE IF NOT EXISTS notifications
+(
+    user_id BIGINT PRIMARY KEY,
+    notification_time TIME NOT NULL,
+    last_notified DATE
+);
+
 CREATE TABLE IF NOT EXISTS migrations
 (
     id UUID PRIMARY KEY
