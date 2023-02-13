@@ -124,7 +124,7 @@ class DiaryCommands(Cog):
                 INSERT INTO moods (user_id, mood, day)
                 VALUES ($1, $2, $3)
                 ON CONFLICT (user_id, day) DO
-                UPDATE SET mood = $2 WHERE moods.user_id = $1 AND moods.day = $2""",
+                UPDATE SET mood = $2 WHERE moods.user_id = $1 AND moods.day = $3""",
                 inter.user.id,
                 mood,
                 date,
