@@ -88,18 +88,21 @@ class DiaryCommands(Cog):
             )
 
     @commands.slash_command(name="edit_entry")
-    async def edit_entry(self, inter: disnake.ApplicationCommandInteraction, date: DateConverter):
+    async def edit_entry(
+        self, inter: disnake.ApplicationCommandInteraction, date: DateConverter, mood: commands.Range[1, 10] = None
+    ):
         """
         Edit already existing entry.
 
         Parameters
         ----------
         date: Day to edit entry on
+        mood: New mood to set on that date
         """
-        entry = await self.bot.db.get_entry(inter.user.id, date)
-        if entry is None:
-            await inter.send("There's no entry created on that day.", ephemeral=True)
+        if date.is_future():
+            await inter.send("Cannot edit date in the future", ephemeral=True)
             return
+        entry = await self.bot.db.get_entry(inter.user.id, date)
         modal = Modal(
             title="Edit Entry",
             components=[
@@ -109,14 +112,29 @@ class DiaryCommands(Cog):
                     style=disnake.TextInputStyle.paragraph,
                     min_length=10,
                     max_length=1024,
-                    value=entry.content,
+                    value=entry.content if entry is not None else None,
                 )
             ],
         )
         await inter.response.send_modal(modal)
         m_inter = await modal.wait()
-        await self.bot.db.edit_entry(inter.author.id, date, m_inter.text_values["content"])
-        await m_inter.send("Successfully edited diary entry!")
+        if mood is not None:
+            await self.bot.db.execute(
+                """
+                INSERT INTO moods (user_id, mood, day)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (user_id, day) DO
+                UPDATE SET mood = $2 WHERE user_id = $1 AND day = $2""",
+                inter.user.id,
+                mood,
+                date,
+            )
+        if entry is not None:
+            await self.bot.db.edit_entry(inter.author.id, date, m_inter.text_values["content"])
+            await inter.send("Successfully edited diary entry!")
+            return
+        await self.bot.db.new_entry(inter.user.id, date, m_inter.text_values["content"])
+        await m_inter.send("Successfully created diary entry on that date!")
 
     @commands.slash_command(name="moods")
     async def moods(

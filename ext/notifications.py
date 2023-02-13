@@ -1,7 +1,6 @@
-from datetime import time
-
 import asyncpg
 import disnake
+import pendulum
 from disnake.ext import commands, tasks
 
 from utils.bot import Cog
@@ -39,6 +38,13 @@ class NotificationManagers(Cog):
         users_to_delete: list[int] = []
         for user_id in users_to_notify:
             try:
+                if (
+                    await self.bot.db.fetchval(
+                        "SELECT EXISTS(SELECT * FROM entries WHERE user_id = $1 AND created_at = CURRENT_DATE)", user_id
+                    )
+                    is True
+                ):
+                    continue
                 user = await self.bot.getch_user(user_id, strict=True)
                 await user.send(
                     "Hey, time to fill out new diary entry! To disable this notification, use `/notification disable`"
@@ -70,7 +76,7 @@ class NotificationCommands(Cog):
         minute: Time minute
         """
         try:
-            t = time(hour, minute)  # type: ignore
+            t = pendulum.Time(hour, minute)  # type: ignore
         except Exception as e:
             await inter.send(f"Invalid time + timezone provided: {e}", ephemeral=True)
             return
@@ -82,7 +88,7 @@ class NotificationCommands(Cog):
                 "INSERT INTO notifications (user_id, notification_time) VALUES ($1, $2)", inter.user.id, t
             )
             await inter.send(
-                f"Successfully set the notification to be sent every day at **{t.hour}:{t.minute} UTC**!\n\n"
+                f"Successfully set the notification to be sent every day at **{t.format('HH:mm')} UTC**!\n\n"
                 "**WARNING**\nIf you close DMs or leave all mutual servers with bot, "
                 "it will remove you from notifications list and you will have to "
                 "configure it again."
