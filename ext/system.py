@@ -1,5 +1,5 @@
 import disnake
-from disnake.ext import commands
+from disnake.ext import commands, tasks
 
 from utils.bot import Cog
 from utils.errors import UNKNOWN, get_error_msg
@@ -15,3 +15,17 @@ class SystemListeners(Cog):
             await inter.send("Sorry unknown exception occurred, we are already working on it!", ephemeral=True)
             raise error
         await inter.send(msg)
+
+
+class SystemLoops(Cog):
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.presence_updater.start()
+
+    @tasks.loop(minutes=30)
+    async def presence_updater(self):
+        await self.bot.wait_until_ready()
+        users_count = len(self.bot.users)
+        await self.bot.change_presence(
+            activity=disnake.Activity(name=f"{users_count} user{'s' if users_count != 1 else ''}")
+        )
