@@ -151,7 +151,7 @@ class Database:
             period.start,
             period.end,
         )
-        return {r["created_at"].strftime(r"%A %B %w %Y"): r["content"] for r in data}
+        return {r["created_at"].strftime("%A %B %d %Y"): r["content"] for r in data}
 
     async def get_moods(self, user_id: int, period: Period) -> tuple[ndarray[datetime], ndarray[int]]:
         data = await self.fetchall(
